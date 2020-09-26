@@ -3,6 +3,7 @@ using DataFrames
 using DataFramesMeta
 using Random
 using Statistics
+using MLBase
 
 function __init__()
     """
@@ -42,8 +43,23 @@ function get_best_matching_unit(codebooks, test_row)
     distances = Any[]
 	for codebook in codebooks
 		dist = euclidean_distance(codebook, test_row)
-		append!(distances,[codebook, dist])
+        append!(distances,[codebook, dist])
     end
 	distances.sort()
 	return distances
+end
+
+function cross_validation_split(dataset, n_folds)
+	dataset_split = Vector{Any}
+	dataset_copy = collect(Iterators.flatten(dataset))
+	fold_size = Int(length(dataset) / n_folds)
+	for i=1:n_folds
+		fold = Vector{Any}
+		while length(fold) < fold_size
+			index = rand((1:length(dataset_copy)))
+			push!(fold, dataset_copy[index])
+        end
+    end
+		push!(dataset_split,fold)
+	return dataset_split
 end
