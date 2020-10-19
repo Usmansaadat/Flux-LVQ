@@ -29,12 +29,24 @@ function euclidean_distance(row1, row2)
     This function calculates the Euclidean distance between the two datapoints
     """
     distance = 0.0
-    for i= 1:length(row1)
+    for i in 1:length(row1)
         distance += (row1[i] - row2[i])^2
         return sqrt(distance)
     end
 end
 
+function accuracy_metric(actual, predicted)
+    """
+    This function is used to calculate the accuracy percentage
+    """
+    correct = 0
+	for i in 1:length(actual)
+		if actual[i] == predicted[i]
+			correct += 1
+        end
+    end
+	return correct / float(length(actual)) * 100.0
+end
 
 function get_best_matching_unit(codebooks, test_row)
     """
@@ -43,10 +55,20 @@ function get_best_matching_unit(codebooks, test_row)
     distances = Any[]
     for codebook in codebooks
         dist = euclidean_distance(codebook, test_row)
-        append!(distances,[codebook, dist])
+        push!(distances,[codebook, dist])
     end
-    distances.sort()
-    return distances
+    sort(distances[1])
+    return distances[1][1]
+end
+
+
+function predict(codebooks, test_row)
+    """
+    This function helps make a prediction with codebook vectors
+    """
+
+    bmu = get_best_matching_unit(codebooks, test_row)
+	return last(bmu)
 end
 
 function cross_validation_split(dataset, n_folds)
@@ -65,29 +87,31 @@ function cross_validation_split(dataset, n_folds)
 end
 
 
+
+
 function random_codebook(train)
     """
     This function helps create the random codebook vector
     """
     n_features = length(train[1])
     n_records = length(train)
-    codebook = [train[rand(1:n_records)][i] for i=1:length(n_features)]
+    codebook = [train[rand(1:n_records)][i] for i in 1:n_features]
     return codebook
 end
 
 
-def train_codebooks(train, n_codebooks, lrate, epochs):
+function train_codebooks(train, n_codebooks, lrate, epochs)
     """
     This function trains a set of codebook vectors
     """
-    codebooks = [random_codebook(train) for i=1:length(n_codebooks)]
-    for epoch=1:length(epochs):
+    codebooks = [random_codebook(train) for i in 1:n_codebooks]
+    for epoch in 1:epochs
         rate = lrate * (1.0-(epoch/float(epochs)))
-        for row=1:train
+        for row in train
             bmu = get_best_matching_unit(codebooks, row)
-            for i=1:length(row)
+            for i in 1:length(row)
                 error = row[i] - bmu[i]
-                if bmu[-1] == row[-1]
+                if last(bmu) == last(row)
                     bmu[i] += rate * error
                 else
                     bmu[i] -= rate * error
@@ -96,3 +120,18 @@ def train_codebooks(train, n_codebooks, lrate, epochs):
         end
     end
     return codebooks
+end
+
+
+function learning_vector_quantization(train, test, n_codebooks, lrate, epochs)
+	"""
+    This function is the main LVQ algorithm
+    """
+    codebooks = train_codebooks(train, n_codebooks, lrate, epochs)
+	predictions = Any[]
+	for row in test
+		output = predict(codebooks, row)
+		push!(predictions,output)
+    end
+	return(predictions)
+end
